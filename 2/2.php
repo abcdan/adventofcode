@@ -1,77 +1,45 @@
 <?php
 
-$contents = file_get_contents(filename: 'short.txt');
-$count    = 0;
+$contents = file_get_contents('1.txt');
+$count = 0;
 
-// Too high -> 661
-foreach (explode(separator: "\n", string: $contents) as $line) {
-    echo $line;
-    $numbers = explode(separator: ' ', string: $line);
-    $numbers = array_map(callback: function ($num): int {
-        return intval(value: $num);
-    }, array:$numbers);
+foreach (explode("\n", $contents) as $line) {
+    $numbers = array_map('intval', explode(' ', $line));
 
-    $safe  = true;
-    $index = 0;
-
-    $consecutive = areElementsConsecutive($numbers);
-
-    if ($consecutive) {
-        echo ' safe
-        ';
+    if (areElementsConsecutive($numbers)) {
         $count++;
     } else {
-
-        echo ' unsafe
-        ';
+        for ($i = 0; $i < count($numbers); $i++) {
+            $tempNumbers = $numbers;
+            array_splice($tempNumbers, $i, 1);
+            if (areElementsConsecutive($tempNumbers)) {
+                $count++;
+                break;
+            }
+        }
     }
 }
 
-echo ' ' . $count . '
-';
+echo ' ' . $count . "\n";
 
-function areElementsConsecutive($array)
-{
-    $issueCount = 0;
-    // This checks if  they are the same;
-    for ($i = 0; $i < count($array) - 1; $i++) {
-        if ($array[$i] == $array[$i + 1]) {
-            echo 'X';
-            $issueCount++;
+function areElementsConsecutive($array) {
+    if (count($array) < 2) return true;
+
+    $increasing = true;
+    $decreasing = true;
+
+    for ($i = 1; $i < count($array); $i++) {
+        $diff = $array[$i] - $array[$i - 1];
+        if ($diff > 3 || $diff < -3 || $diff == 0) {
+            return false;
+        }
+        if ($diff < 0) {
+            $increasing = false;
+        }
+        if ($diff > 0) {
+            $decreasing = false;
         }
     }
 
-    $a = $array;
-    $b = $array;
-
-    sort($a);
-    rsort($b);
-
-    // This checks if not sorted
-    if ($array != $a && $array != $b) {
-        $issueCount++;
-    }
-
-    // This checks the difference between issues
-    $isPositive = ($array[0] - $array[1]) < 0;
-    if ($isPositive) {
-        for ($i = 1; $i < count($array); $i++) {
-            if ($array[$i] - $array[$i - 1] > 3) {
-                $issueCount++;
-            }
-        }
-    } else {
-        for ($i = 1; $i < count($array); $i++) {
-            if ($array[$i] - $array[$i - 1] < -3 || $array[$i] - $array[$i - 1] > 0) {
-                $issueCount++;
-            }
-        }
-    }
-    echo '      ' . $issueCount;
-
-    if ($issueCount >= 2) {
-        return false;
-    }
-
-    return true;
+    return $increasing || $decreasing;
 }
