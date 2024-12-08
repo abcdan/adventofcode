@@ -55,76 +55,58 @@ function moveLeft($currentY, $currentX, $map)
     return [$nextMove, [$currentY, $currentX - 1]];
 }
 
-$obstacles = 0;
+$steps = 1;
+$direction = 0; // 0: up, 1: right, 2: down, 3: left
+$currentCoordinates = $startingCoordinates;
+$visited = [$currentCoordinates[0] . ',' . $currentCoordinates[1] => true];
+$outputMap = $map;
 
-for ($y = 0; $y < count($map); $y++) {
-    for ($x = 0; $x < count($map[0]); $x++) {
-        if ($map[$y][$x] !== '.') {
-            continue;
-        }
+while (true) {
+    $nextCell = null;
 
-        // Try placing obstacle here
-        $testMap = $map;
-        $testMap[$y][$x] = '#';
+    switch ($direction) {
+        case 0: // up
+            $nextCell = moveUp($currentCoordinates[0], $currentCoordinates[1], $map);
+            break;
+        case 1: // right
+            $nextCell = moveRight($currentCoordinates[0], $currentCoordinates[1], $map);
+            break;
+        case 2: // down
+            $nextCell = moveDown($currentCoordinates[0], $currentCoordinates[1], $map);
+            break;
+        case 3: // left
+            $nextCell = moveLeft($currentCoordinates[0], $currentCoordinates[1], $map);
+            break;
+    }
 
-        $steps = 1;
-        $direction = 0; // 0: up, 1: right, 2: down, 3: left
-        $currentCoordinates = $startingCoordinates;
-        $visited = [$currentCoordinates[0] . ',' . $currentCoordinates[1] => true];
-        $visitedStates = []; // Track position + direction combinations
-        $isLoop = false;
+    if ($nextCell[0] === '#') {
+        // Hit obstacle, turn right
+        $direction = ($direction + 1) % 4;
+        continue;
+    }
 
-        while (true) {
-            $nextCell = null;
-            $state = $currentCoordinates[0] . ',' . $currentCoordinates[1] . ',' . $direction;
+    if ($nextCell[0] === null) {
+        // Left the map
+        break;
+    }
 
-            if (isset($visitedStates[$state])) {
-                $isLoop = true;
-                break;
-            }
-            $visitedStates[$state] = true;
+    // Move to next position
+    $currentCoordinates = $nextCell[1];
+    $key = $currentCoordinates[0] . ',' . $currentCoordinates[1];
 
-            switch ($direction) {
-                case 0: // up
-                    $nextCell = moveUp($currentCoordinates[0], $currentCoordinates[1], $testMap);
-                    break;
-                case 1: // right
-                    $nextCell = moveRight($currentCoordinates[0], $currentCoordinates[1], $testMap);
-                    break;
-                case 2: // down
-                    $nextCell = moveDown($currentCoordinates[0], $currentCoordinates[1], $testMap);
-                    break;
-                case 3: // left
-                    $nextCell = moveLeft($currentCoordinates[0], $currentCoordinates[1], $testMap);
-                    break;
-            }
-
-            if ($nextCell[0] === '#') {
-                // Hit obstacle, turn right
-                $direction = ($direction + 1) % 4;
-                continue;
-            }
-
-            if ($nextCell[0] === null) {
-                // Left the map
-                break;
-            }
-
-            // Move to next position
-            $currentCoordinates = $nextCell[1];
-            $key = $currentCoordinates[0] . ',' . $currentCoordinates[1];
-
-            if (!isset($visited[$key])) {
-                $steps++;
-                $visited[$key] = true;
-            }
-        }
-
-        if ($isLoop) {
-            $obstacles++;
-            echo "Found loop at position ($y,$x) - Count is now: $obstacles\n";
+    if (!isset($visited[$key])) {
+        $steps++;
+        $visited[$key] = true;
+        if ($outputMap[$currentCoordinates[0]][$currentCoordinates[1]] === '.') {
+            $outputMap[$currentCoordinates[0]][$currentCoordinates[1]] = 'X';
         }
     }
 }
 
-echo "Final count: $obstacles";
+$output = '';
+foreach ($outputMap as $row) {
+    $output .= implode('', $row) . "\n";
+}
+file_put_contents('output.txt', $output);
+
+echo $steps;
